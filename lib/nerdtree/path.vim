@@ -149,7 +149,7 @@ function! s:Path.Create(fullpath)
 
             call mkdir(fullpath, 'p')
 
-        "assume its a file and create
+            "assume its a file and create
         else
             call s:Path.createParentDirectories(a:fullpath)
             call writefile([], a:fullpath)
@@ -181,10 +181,18 @@ function! s:Path.copy(dest)
     endif
 
     let cmd = cmd_prefix . " " . escape(self.str(), self._escChars()) . " " . escape(a:dest, self._escChars())
-    let success = system(cmd)
-    if v:shell_error != 0
-        throw "NERDTree.CopyError: Could not copy ''". self.str() ."'' to: '" . a:dest . "'"
+
+    if exists(':Dispatch')
+        exe ':Dispatch '. cmd
+        let success = 1
+    else
+        let success = system(cmd)
+        if v:shell_error != 0
+            throw "NERDTree.CopyError: Could not copy ''". self.str() ."'' to: '" . a:dest . "'"
+        endif
+
     endif
+
 endfunction
 
 "FUNCTION: Path.CopyingSupported() {{{1
@@ -237,10 +245,16 @@ function! s:Path.delete()
     if self.isDirectory
 
         let cmd = g:NERDTreeRemoveDirCmd . self.str({'escape': 1})
-        let success = system(cmd)
 
-        if v:shell_error != 0
-            throw "NERDTree.PathDeletionError: Could not delete directory: '" . self.str() . "'"
+        if exists(':Dispatch')
+            exe ':Dispatch '. cmd
+            let success = 1
+        else
+            let success = system(cmd)
+
+            if v:shell_error != 0
+                throw "NERDTree.PathDeletionError: Could not delete directory: '" . self.str() . "'"
+            endif
         endif
     else
         let success = delete(self.str())
